@@ -1,9 +1,7 @@
 {
-  "name": "open-telemetry/opentelemetry-auto-laravel",
-  "description": "OpenTelemetry auto-instrumentation for Laravel",
-  "keywords": ["opentelemetry", "otel", "open-telemetry", "tracing", "laravel", "instrumentation"],
+  "name": "cego/opentelemetry-auto-laravel",
+  "description": "Opinionated OpenTelemetry auto-instrumentation for Laravel",
   "type": "library",
-  "homepage": "https://opentelemetry.io/docs/php",
   "readme": "./README.md",
   "license": "Apache-2.0",
   "minimum-stability": "dev",
