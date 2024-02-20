@@ -6,7 +6,6 @@ namespace OpenTelemetry\Contrib\Instrumentation\Laravel;
 
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use OpenTelemetry\API\Globals;
 use OpenTelemetry\API\Instrumentation\CachedInstrumentation;
 use OpenTelemetry\API\Trace\Span;
@@ -79,16 +78,22 @@ class HttpInstrumentation
                     $span->setAttribute(TraceAttributes::HTTP_RESPONSE_STATUS_CODE, $response->getStatusCode());
                     $span->setAttribute(TraceAttributes::NETWORK_PROTOCOL_VERSION, $response->getProtocolVersion());
                     $span->setAttribute(TraceAttributes::HTTP_RESPONSE_BODY_SIZE, $response->headers->get('Content-Length'));
-                }
-                if(($route = Route::getCurrentRoute()?->uri()) !== null) {
-                    $request = ($params[0] instanceof Request) ? $params[0] : null;
 
-                    if (! str_starts_with($route, '/')) {
-                        $route = '/' . $route;
+                    // Propagate server-timing header to response, if ServerTimingPropagator is present
+                    if (class_exists('OpenTelemetry\Contrib\Propagation\ServerTiming\ServerTimingPropagator')) {
+                        /** @phan-suppress-next-line PhanUndeclaredClassMethod */
+                        $prop = new \OpenTelemetry\Contrib\Propagation\ServerTiming\ServerTimingPropagator();
+                        /** @phan-suppress-next-line PhanUndeclaredClassMethod */
+                        $prop->inject($response, ResponsePropagationSetter::instance(), $scope->context());
                     }
 
-                    /** @psalm-suppress ArgumentTypeCoercion */
-                    $span->updateName(sprintf('%s %s', $request?->method() ?? 'unknown', $route));
+                    // Propagate traceresponse header to response, if TraceResponsePropagator is present
+                    if (class_exists('OpenTelemetry\Contrib\Propagation\TraceResponse\TraceResponsePropagator')) {
+                        /** @phan-suppress-next-line PhanUndeclaredClassMethod */
+                        $prop = new \OpenTelemetry\Contrib\Propagation\TraceResponse\TraceResponsePropagator();
+                        /** @phan-suppress-next-line PhanUndeclaredClassMethod */
+                        $prop->inject($response, ResponsePropagationSetter::instance(), $scope->context());
+                    }
                 }
 
                 $span->end();
